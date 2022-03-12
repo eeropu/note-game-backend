@@ -14,7 +14,67 @@ app.use(cors({
 }))
 
 const User = require('./models/user')
+const Result = require('./models/result')
 const saltRounds = 10
+
+const getTokenFrom = request => {
+    const authorization = request.get('authorization')
+    if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+        return authorization.substring(7)
+    }
+    return null
+}
+
+app.get('/api/result', async (req, res) => {
+    const token = getTokenFrom(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken.id) {
+        return response.status(401).json({ error: 'token missing or invalid' })
+    }
+    const user = await User.findById(decodedToken.id)
+    res.status(200).end()
+})
+
+app.get('/api/result/:key', async (req, res) => {
+    const key = req.params.key
+    const token = getTokenFrom(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken.id) {
+        return response.status(401).json({ error: 'token missing or invalid' })
+    }
+    const result = await Result.findOne({ user: decodedToken.id, key })
+    if (result) {
+        res.status(200).json(result)
+    } else {
+        res.status(404).json({ error: "Not found" })
+    }
+})
+
+app.post('/api/result', async (req, res) => {
+    const { key, time, date } = req.body
+    const token = getTokenFrom(req)
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken.id) {
+        return response.status(401).json({ error: 'token missing or invalid' })
+    }
+    const result = new Result({
+        key,
+        time,
+        date,
+        user: decodedToken.id
+    })
+
+    result.save().then(response => {
+        res.status(200).json(response)
+    }).catch(error => {
+        console.log(error)
+        if (error.name === "ValidationError") {
+            res.status(400).json({ error: error.message })
+        } else {
+            res.status(500).json({ error: "Server error" })
+        }
+    })
+})
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body
