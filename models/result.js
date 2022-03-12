@@ -5,6 +5,7 @@ mongoose.connect(url)
 
 const resultSchema = new mongoose.Schema({
     key: String,
+    position: Number,
     time: Number,
     date: Date,
     user: {

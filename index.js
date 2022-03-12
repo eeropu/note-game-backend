@@ -25,24 +25,25 @@ const getTokenFrom = request => {
     return null
 }
 
-app.get('/api/result', async (req, res) => {
+app.get('/api/results', async (req, res) => {
     const token = getTokenFrom(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken.id) {
         return response.status(401).json({ error: 'token missing or invalid' })
     }
-    const user = await User.findById(decodedToken.id)
-    res.status(200).end()
+    const results = await Result.find({ user: decodedToken.id })
+    res.status(200).json(results)
 })
 
-app.get('/api/result/:key', async (req, res) => {
+app.get('/api/result/:key/:position', async (req, res) => {
     const key = req.params.key
+    const position = req.params.position
     const token = getTokenFrom(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken.id) {
         return response.status(401).json({ error: 'token missing or invalid' })
     }
-    const result = await Result.findOne({ user: decodedToken.id, key })
+    const result = await Result.findOne({ user: decodedToken.id, key, position })
     if (result) {
         res.status(200).json(result)
     } else {
@@ -51,7 +52,7 @@ app.get('/api/result/:key', async (req, res) => {
 })
 
 app.post('/api/result', async (req, res) => {
-    const { key, time, date } = req.body
+    const { key, position, time, date } = req.body
     const token = getTokenFrom(req)
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken.id) {
@@ -59,6 +60,7 @@ app.post('/api/result', async (req, res) => {
     }
     const result = new Result({
         key,
+        position,
         time,
         date,
         user: decodedToken.id
