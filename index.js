@@ -27,9 +27,12 @@ const getTokenFrom = request => {
 
 app.get('/api/results', async (req, res) => {
     const token = getTokenFrom(req)
+    if (!token) {
+        return res.status(401).json({ error: 'token missing or invalid' })
+    }
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken.id) {
-        return response.status(401).json({ error: 'token missing or invalid' })
+        return res.status(401).json({ error: 'token missing or invalid' })
     }
     const results = await Result.find({ user: decodedToken.id })
     res.status(200).json(results)
@@ -39,9 +42,12 @@ app.get('/api/result/:key/:position', async (req, res) => {
     const key = req.params.key
     const position = req.params.position
     const token = getTokenFrom(req)
+    if (!token) {
+        return res.status(401).json({ error: 'token missing or invalid' })
+    }
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken.id) {
-        return response.status(401).json({ error: 'token missing or invalid' })
+        return res.status(401).json({ error: 'token missing or invalid' })
     }
     const result = await Result.findOne({ user: decodedToken.id, key, position })
     if (result) {
@@ -54,9 +60,12 @@ app.get('/api/result/:key/:position', async (req, res) => {
 app.post('/api/result', async (req, res) => {
     const { key, position, time, date } = req.body
     const token = getTokenFrom(req)
+    if (!token) {
+        return res.status(401).json({ error: 'token missing or invalid' })
+    }
     const decodedToken = jwt.verify(token, process.env.SECRET)
     if (!token || !decodedToken.id) {
-        return response.status(401).json({ error: 'token missing or invalid' })
+        return res.status(401).json({ error: 'token missing or invalid' })
     }
     const result = new Result({
         key,
